@@ -6,8 +6,7 @@ const Card = ({ children }) => (
     {children}
   </div>
 );
-//aaaa
-// aaaaa
+
 // Button 컴포넌트 생성
 const Button = ({ onClick, children }) => (
   <button
