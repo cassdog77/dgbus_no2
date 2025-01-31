@@ -25,53 +25,70 @@ const Button = ({ onClick, children }) => (
   </button>
 );
 
-export default function LocationMapApp() {
-  const [location, setLocation] = useState({ lat: null, lng: null });
+export default function BusStopApp() {
+  const [busStops, setBusStops] = useState([]);
   const [error, setError] = useState(null);
 
+  // 지정된 좌표
+  const xPos = 128.640765;
+  const yPos = 35.8681438;
+
   useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-        },
-        (err) => {
-          setError(err.message);
-        }
-      );
-    } else {
-      setError('이 브라우저는 위치 서비스를 지원하지 않습니다.');
-    }
+    const fetchBusStops = async () => {
+      try {
+        const response = await fetch(
+          `https://businfo.daegu.go.kr:8095/dbms_web_api/bs/nearby?xPos=${xPos}&yPos=${yPos}&radius=500`
+        );
+        const text = await response.text();
+
+        // 데이터를 파싱하여 화면에 표시
+        const busStopData = parseBusStopData(text);
+        setBusStops(busStopData);
+      } catch (err) {
+        setError('버스 정류장 정보를 가져오는 중 오류가 발생했습니다.');
+      }
+    };
+
+    fetchBusStops();
   }, []);
+
+  // 데이터를 파싱하는 함수 (간단한 형식으로 예시)
+  const parseBusStopData = (data) => {
+    // 데이터를 '\n'로 분리하고, 각 정류장을 필터링하여 리턴
+    const parsedData = data
+      .split(/(\d{10}[가-힣]+)/) // 정류장 ID로 데이터를 분리
+      .filter((item) => item.trim().length > 0) // 빈 항목 제거
+      .map((item) => {
+        const stopId = item.match(/\d{10}/)[0];
+        const stopName = item.split(stopId)[1].match(/[가-힣]+/)[0];
+        const distance = item.split(stopId)[1].match(/\d+\.\d+/)[0];
+        return { stopId, stopName, distance };
+      });
+
+    return parsedData;
+  };
 
   return (
     <div style={{ textAlign: 'center', padding: '16px' }}>
       <Card>
-        <h1>내 위치</h1>
+        <h1>주변 버스 정류장</h1>
         {error ? (
           <p style={{ color: 'red' }}>{error}</p>
-        ) : location.lat && location.lng ? (
+        ) : busStops.length > 0 ? (
           <div>
-            <p>위도: {location.lat}</p>
-            <p>경도: {location.lng}</p>
-            <iframe
-              src={`https://www.google.com/maps?q=${location.lat},${location.lng}&z=15&output=embed`}
-              width="100%"
-              height="400"
-              allowFullScreen
-              loading="lazy"
-              title="My Current Location Map"
-            ></iframe>
+            {busStops.map((stop) => (
+              <div key={stop.stopId} style={{ marginBottom: '16px' }}>
+                <p>정류장 이름: {stop.stopName}</p>
+                <p>거리: {stop.distance}m</p>
+              </div>
+            ))}
           </div>
         ) : (
-          <p>위치를 불러오는 중...</p>
+          <p>버스 정류장을 불러오는 중...</p>
         )}
       </Card>
       <Button onClick={() => window.location.reload()}>
-        위치 새로고침
+        정류장 새로고침
       </Button>
     </div>
   );
