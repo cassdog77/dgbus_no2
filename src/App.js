@@ -3,8 +3,9 @@ import { GoogleMap, Marker, useLoadScript } from '@react-google-maps/api';
 
 // 환경 변수에서 Google Maps API 키 가져오기
 const googleMapsApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
-console.log('Google Maps API Key:', googleMapsApiKey);
+//console.log('Google Maps API Key:', googleMapsApiKey);
 
+//ㅁㅁㅁ
 // Card 컴포넌트 생성
 const Card = ({ children }) => (
   <div style={{ border: '1px solid #ddd', padding: '16px', borderRadius: '8px' }}>
