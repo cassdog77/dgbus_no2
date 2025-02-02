@@ -1,11 +1,32 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent } from './components/ui/card';
+import { Button } from './components/ui/button';
+import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
+
+const googleMapsApiKey = "YOUR_GOOGLE_MAPS_API_KEY"; // 환경변수로 대체
 
 export default function LocationMapApp() {
   const [location, setLocation] = useState({ lat: null, lng: null });
-  const [오류, setError] = useState(null);
+  const [error, setError] = useState(null);
+  const [busStops, setBusStops] = useState([]); // 주변 버스 정류장 데이터
 
+  // 주변 버스 정류장 데이터 가져오기
+  const fetchBusStops = useCallback((lat, lng) => {
+    const radius = 500; // 반경 500m
+    const apiUrl = `https://businfo.daegu.go.kr:8095/dbms_web_api/bs/nearby?xPos=${lng}&yPos=${lat}&radius=${radius}`;
+    fetch(apiUrl)
+      .then(response => response.json())
+      .then(data => {
+        if (data) {
+          setBusStops(data.filter(item => item.lat && item.lng)); // lat, lng가 있는 항목만 필터링
+        }
+      })
+      .catch(err => {
+        setError('버스 정류장 정보를 가져오는 데 실패했습니다.');
+      });
+  }, []); // 의존성 배열에 빈 배열을 전달하여 함수가 재생성되지 않도록 설정
+
+  // 위치 가져오기
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -14,6 +35,7 @@ export default function LocationMapApp() {
             lat: position.coords.latitude,
             lng: position.coords.longitude,
           });
+          fetchBusStops(position.coords.latitude, position.coords.longitude); // 위치를 얻은 후 버스 정류장 가져오기
         },
         (err) => {
           setError(err.message);
@@ -22,26 +44,37 @@ export default function LocationMapApp() {
     } else {
       setError('이 브라우저는 위치 서비스를 지원하지 않습니다.');
     }
-  }, []);
+  }, [fetchBusStops]); // 의존성 배열에 fetchBusStops 추가
 
   return (
-    <div className='flex flex-col items-center p-4'>
-      <Card className='w-full max-w-md'>
+    <div className="flex flex-col items-center p-4">
+      <Card className="w-full max-w-md">
         <CardContent>
-          <h1 className='text-xl font-bold mb-4'>내 위치</h1>
+          <h1 className="text-xl font-bold mb-4">내 위치</h1>
           {error ? (
-            <p className='text-red-500'>{error}</p>
+            <p className="text-red-500">{error}</p>
           ) : location.lat && location.lng ? (
             <div>
-              <p>위도: {location.lat}</p>
-              <p>경도: {location.lng}</p>
-              <iframe
-                src={`https://www.google.com/maps?q=${location.lat},${location.lng}&z=15&output=embed`}
-                width='100%'
-                height='400'
-                allowFullScreen
-                loading='lazy'
-              ></iframe>
+              {/* 구글 지도 로드 */}
+              <LoadScript googleMapsApiKey={googleMapsApiKey}>
+                <GoogleMap
+                  mapContainerStyle={{ width: '100%', height: '400px' }}
+                  center={{ lat: location.lat, lng: location.lng }}
+                  zoom={15}
+                >
+                  {/* 현재 위치 마커 */}
+                  <Marker position={{ lat: location.lat, lng: location.lng }} />
+
+                  {/* 주변 버스 정류장 마커 */}
+                  {busStops.map((stop, index) => (
+                    <Marker
+                      key={index}
+                      position={{ lat: parseFloat(stop.lat), lng: parseFloat(stop.lng) }}
+                      title={stop.stationName}
+                    />
+                  ))}
+                </GoogleMap>
+              </LoadScript>
             </div>
           ) : (
             <p>위치를 불러오는 중...</p>
@@ -49,7 +82,7 @@ export default function LocationMapApp() {
         </CardContent>
       </Card>
       <Button
-        className='mt-4'
+        className="mt-4"
         onClick={() => window.location.reload()}
       >
         위치 새로고침

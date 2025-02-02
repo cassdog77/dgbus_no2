@@ -1,4 +1,9 @@
 import { useState, useEffect } from 'react';
+import { GoogleMap, Marker, useLoadScript } from '@react-google-maps/api';
+
+// 환경 변수에서 Google Maps API 키 가져오기
+const googleMapsApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
+console.log('Google Maps API Key:', googleMapsApiKey);
 
 // Card 컴포넌트 생성
 const Card = ({ children }) => (
@@ -33,6 +38,12 @@ export default function BusStopApp() {
   const xPos = 128.640765;
   const yPos = 35.8681438;
 
+
+
+  const { isLoaded } = useLoadScript({
+    googleMapsApiKey,
+  });
+
   useEffect(() => {
     const fetchBusStops = async () => {
       try {
@@ -52,9 +63,8 @@ export default function BusStopApp() {
     fetchBusStops();
   }, []);
 
-  // 데이터를 파싱하는 함수 (간단한 형식으로 예시)
+  // 데이터를 파싱하는 함수
   const parseBusStopData = (data) => {
-    // 데이터를 '\n'로 분리하고, 각 정류장을 필터링하여 리턴
     const parsedData = data
       .split(/(\d{10}[가-힣]+)/) // 정류장 ID로 데이터를 분리
       .filter((item) => item.trim().length > 0) // 빈 항목 제거
@@ -67,6 +77,8 @@ export default function BusStopApp() {
 
     return parsedData;
   };
+
+  if (!isLoaded) return <div>지도를 불러오는 중...</div>;
 
   return (
     <div style={{ textAlign: 'center', padding: '16px' }}>
@@ -87,6 +99,28 @@ export default function BusStopApp() {
           <p>버스 정류장을 불러오는 중...</p>
         )}
       </Card>
+
+      {/* Google 지도 */}
+      <div style={{ height: '500px', width: '100%', marginTop: '16px' }}>
+        <GoogleMap
+          center={{ lat: yPos, lng: xPos }}
+          zoom={15}
+          mapContainerStyle={{ width: '100%', height: '100%' }}
+        >
+          {/* 사용자 주변의 버스 정류장을 마커로 표시 */}
+          {busStops.map((stop, index) => (
+            <Marker
+              key={index}
+              position={{
+                lat: yPos + (Math.random() - 0.5) * 0.001, // 예시 좌표. 실제로는 정류장의 정확한 좌표 필요
+                lng: xPos + (Math.random() - 0.5) * 0.001,
+              }}
+              title={stop.stopName}
+            />
+          ))}
+        </GoogleMap>
+      </div>
+
       <Button onClick={() => window.location.reload()}>
         정류장 새로고침
       </Button>
