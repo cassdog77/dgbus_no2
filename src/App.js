@@ -3,9 +3,7 @@ import { GoogleMap, Marker, useLoadScript } from '@react-google-maps/api';
 
 // 환경 변수에서 Google Maps API 키 가져오기
 const googleMapsApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
-//console.log('Google Maps API Key:', googleMapsApiKey);
 
-//ㅁㅁㅁ
 // Card 컴포넌트 생성
 const Card = ({ children }) => (
   <div style={{ border: '1px solid #ddd', padding: '16px', borderRadius: '8px' }}>
@@ -39,8 +37,6 @@ export default function BusStopApp() {
   const xPos = 128.640765;
   const yPos = 35.8681438;
 
-
-
   const { isLoaded } = useLoadScript({
     googleMapsApiKey,
   });
@@ -51,11 +47,15 @@ export default function BusStopApp() {
         const response = await fetch(
           `https://businfo.daegu.go.kr:8095/dbms_web_api/bs/nearby?xPos=${xPos}&yPos=${yPos}&radius=500`
         );
-        const text = await response.text();
+        const data = await response.json(); // JSON 형식으로 응답을 처리
+        console.log('API 응답 JSON 데이터:', data);
 
-        // 데이터를 파싱하여 화면에 표시
-        const busStopData = parseBusStopData(text);
-        setBusStops(busStopData);
+        // 성공 시 데이터를 파싱하여 상태로 저장
+        if (data.header.success) {
+          setBusStops(data.body);
+        } else {
+          setError('버스 정류장 정보를 가져오지 못했습니다.');
+        }
       } catch (err) {
         setError('버스 정류장 정보를 가져오는 중 오류가 발생했습니다.');
       }
@@ -63,21 +63,6 @@ export default function BusStopApp() {
 
     fetchBusStops();
   }, []);
-
-  // 데이터를 파싱하는 함수
-  const parseBusStopData = (data) => {
-    const parsedData = data
-      .split(/(\d{10}[가-힣]+)/) // 정류장 ID로 데이터를 분리
-      .filter((item) => item.trim().length > 0) // 빈 항목 제거
-      .map((item) => {
-        const stopId = item.match(/\d{10}/)[0];
-        const stopName = item.split(stopId)[1].match(/[가-힣]+/)[0];
-        const distance = item.split(stopId)[1].match(/\d+\.\d+/)[0];
-        return { stopId, stopName, distance };
-      });
-
-    return parsedData;
-  };
 
   if (!isLoaded) return <div>지도를 불러오는 중...</div>;
 
@@ -88,14 +73,28 @@ export default function BusStopApp() {
         {error ? (
           <p style={{ color: 'red' }}>{error}</p>
         ) : busStops.length > 0 ? (
-          <div>
-            {busStops.map((stop) => (
-              <div key={stop.stopId} style={{ marginBottom: '16px' }}>
-                <p>정류장 이름: {stop.stopName}</p>
-                <p>거리: {stop.distance}m</p>
-              </div>
-            ))}
-          </div>
+          <table
+            style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+              marginTop: '16px',
+            }}
+          >
+            <thead>
+              <tr style={{ borderBottom: '1px solid #ddd' }}>
+                <th style={{ padding: '8px', textAlign: 'left' }}>정류장 이름</th>
+                <th style={{ padding: '8px', textAlign: 'left' }}>거리 (m)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {busStops.map((stop) => (
+                <tr key={stop.bsId} style={{ borderBottom: '1px solid #ddd' }}>
+                  <td style={{ padding: '8px' }}>{stop.bsNm}</td>
+                  <td style={{ padding: '8px' }}>{stop.dist}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         ) : (
           <p>버스 정류장을 불러오는 중...</p>
         )}
@@ -108,15 +107,15 @@ export default function BusStopApp() {
           zoom={15}
           mapContainerStyle={{ width: '100%', height: '100%' }}
         >
-          {/* 사용자 주변의 버스 정류장을 마커로 표시 */}
+          {/* 버스 정류장을 마커로 표시 */}
           {busStops.map((stop, index) => (
             <Marker
               key={index}
               position={{
-                lat: yPos + (Math.random() - 0.5) * 0.001, // 예시 좌표. 실제로는 정류장의 정확한 좌표 필요
+                lat: yPos + (Math.random() - 0.5) * 0.001, // 좌표 정보를 API에서 제공하지 않기 때문에 임시로 랜덤하게 설정
                 lng: xPos + (Math.random() - 0.5) * 0.001,
               }}
-              title={stop.stopName}
+              title={stop.bsNm}
             />
           ))}
         </GoogleMap>
