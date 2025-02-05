@@ -83,7 +83,15 @@ export default function BusStopApp() {
           <tbody>
             {busStops.map((stop) => (
               <tr key={stop.bsId} style={{ borderBottom: '1px solid #ddd' }}>
-                <td style={{ padding: '8px' }}>{stop.bsNm}</td>
+                <td style={{ padding: '8px' }}>
+                  <a
+                    href={`https://businfo.daegu.go.kr:8095/dbms_web/map?mapMode=0&searchText=${stop.bsNm}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {stop.bsNm}
+                  </a>
+                </td>
                 <td style={{ padding: '8px' }}>{Math.floor(stop.dist)}m</td>
                 <td style={{ padding: '8px' }}>
                   {arrivalInfo[stop.bsId] ? (
