@@ -98,11 +98,11 @@ export default function BusStopApp() {
                     <ul style={{ listStyleType: 'none', padding: 0 }}>
                       {arrivalInfo[stop.bsId].map((bus, index) => (
                         <li key={index}>
-                          <strong>{bus.routeNo}번 버스</strong>:
+                          <strong>{bus.routeNo} </strong>:
                           {bus.arrList.length > 0 ? (
                             bus.arrList.map((arr, idx) => (
                               <span key={idx}>
-                                {arr.arrState} ({arr.bsGap} 정류소 전, {arr.bsNm})
+                                {arr.arrState} ({arr.bsGap}전, {arr.bsNm})
                                 {idx < bus.arrList.length - 1 && ', '}
                               </span>
                             ))
