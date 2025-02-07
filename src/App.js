@@ -6,14 +6,13 @@ export default function BusStopApp() {
   const [error, setError] = useState(null);
   const [position, setPosition] = useState({ xPos: null, yPos: null });
 
-  // Get user's current position whenever the page is refreshed
   useEffect(() => {
     const getUserLocation = () => {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
             const { latitude, longitude } = position.coords;
-            setPosition({ xPos: longitude, yPos: latitude }); // Update with user's location
+            setPosition({ xPos: longitude, yPos: latitude });
           },
           (error) => {
             setError('사용자의 위치를 가져올 수 없습니다.');
@@ -24,8 +23,8 @@ export default function BusStopApp() {
       }
     };
 
-    getUserLocation(); // Trigger location fetching on mount
-  }, []); // Empty dependency array ensures this runs only on mount (or page refresh)
+    getUserLocation();
+  }, []);
 
   useEffect(() => {
     if (position.xPos && position.yPos) {
@@ -41,18 +40,18 @@ export default function BusStopApp() {
             const orderedStops = JSON.parse(savedOrder).map((bsId) =>
               data.body.find((stop) => stop.bsId === bsId)
             );
-            setBusStops(orderedStops.filter(Boolean)); // 저장된 순서에 따라 정류장 배열 설정
+            setBusStops(orderedStops.filter(Boolean));
           } else {
-            setBusStops(data.body); // 기본 순서로 설정
+            setBusStops(data.body);
           }
         } catch (err) {
           setError('버스 정류장 정보를 가져오는 중 오류가 발생했습니다.');
         }
       };
 
-      fetchBusStops(); // Fetch bus stops after position has been updated
+      fetchBusStops();
     }
-  }, [position]); // Position as dependency ensures this runs whenever position changes
+  }, [position]);
 
   useEffect(() => {
     const fetchArrivalInfo = async (bsId) => {
@@ -87,7 +86,7 @@ export default function BusStopApp() {
 
   return (
     <div style={{ textAlign: 'center', padding: '16px' }}>
-      <h4>버스정류장(인근)</h4>
+      <h1>주변 버스 정류장</h1>
       {error ? (
         <p style={{ color: 'red' }}>{error}</p>
       ) : (
@@ -96,8 +95,7 @@ export default function BusStopApp() {
         >
           <thead>
             <tr style={{ borderBottom: '1px solid #ddd' }}>
-              <th style={{ padding: '8px' }}>정류장 이름</th>
-              <th style={{ padding: '8px' }}>거리</th>
+              <th style={{ padding: '8px' }}>정류장</th>
               <th style={{ padding: '8px' }}>버스 도착 정보</th>
             </tr>
           </thead>
@@ -113,22 +111,20 @@ export default function BusStopApp() {
                     {stop.bsNm}
                   </a>
                 </td>
-                <td style={{ padding: '8px' }}>{Math.floor(stop.dist)}m</td>
                 <td style={{ padding: '8px' }}>
                   {arrivalInfo[stop.bsId] ? (
                     <ul style={{ listStyleType: 'none', padding: 0 }}>
                       {arrivalInfo[stop.bsId].map((bus, index) => (
                         <li key={index}>
-                          <strong>{bus.routeNo} </strong>:
+                          <strong>{bus.routeNo}</strong>
                           {bus.arrList.length > 0 ? (
                             bus.arrList.map((arr, idx) => (
-                              <span key={idx}>
-                                {arr.arrState} ({arr.bsGap}전, {arr.bsNm})
-                                {idx < bus.arrList.length - 1 && ', '}
-                              </span>
+                              <div key={idx}>
+                                {arr.arrState}({arr.bsGap}) {arr.bsNm}
+                              </div>
                             ))
                           ) : (
-                            <span> 도착 정보가 없습니다.</span>
+                            <div> 도착 정보가 없습니다.</div>
                           )}
                         </li>
                       ))}
