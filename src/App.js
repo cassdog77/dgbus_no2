@@ -4,9 +4,9 @@ export default function BusStopApp() {
   const [busStops, setBusStops] = useState([]);
   const [arrivalInfo, setArrivalInfo] = useState({});
   const [error, setError] = useState(null);
-  const [position, setPosition] = useState({ xPos: 128.640765, yPos: 35.8681438 });
+  const [position, setPosition] = useState({ xPos: null, yPos: null });
 
-  // Get user's current position
+  // Get user's current position whenever the page is refreshed
   useEffect(() => {
     const getUserLocation = () => {
       if (navigator.geolocation) {
@@ -24,35 +24,35 @@ export default function BusStopApp() {
       }
     };
 
-    getUserLocation();
-  }, []);
+    getUserLocation(); // Trigger location fetching on mount
+  }, []); // Empty dependency array ensures this runs only on mount (or page refresh)
 
   useEffect(() => {
-    const fetchBusStops = async () => {
-      try {
-        const response = await fetch(
-          `https://businfo.daegu.go.kr:8095/dbms_web_api/bs/nearby?xPos=${position.xPos}&yPos=${position.yPos}&radius=400`
-        );
-        const data = await response.json();
-
-        const savedOrder = localStorage.getItem('busStopOrder');
-        if (savedOrder) {
-          const orderedStops = JSON.parse(savedOrder).map((bsId) =>
-            data.body.find((stop) => stop.bsId === bsId)
-          );
-          setBusStops(orderedStops.filter(Boolean)); // 저장된 순서에 따라 정류장 배열 설정
-        } else {
-          setBusStops(data.body); // 기본 순서로 설정
-        }
-      } catch (err) {
-        setError('버스 정류장 정보를 가져오는 중 오류가 발생했습니다.');
-      }
-    };
-
     if (position.xPos && position.yPos) {
-      fetchBusStops();
+      const fetchBusStops = async () => {
+        try {
+          const response = await fetch(
+            `https://businfo.daegu.go.kr:8095/dbms_web_api/bs/nearby?xPos=${position.xPos}&yPos=${position.yPos}&radius=500`
+          );
+          const data = await response.json();
+
+          const savedOrder = localStorage.getItem('busStopOrder');
+          if (savedOrder) {
+            const orderedStops = JSON.parse(savedOrder).map((bsId) =>
+              data.body.find((stop) => stop.bsId === bsId)
+            );
+            setBusStops(orderedStops.filter(Boolean)); // 저장된 순서에 따라 정류장 배열 설정
+          } else {
+            setBusStops(data.body); // 기본 순서로 설정
+          }
+        } catch (err) {
+          setError('버스 정류장 정보를 가져오는 중 오류가 발생했습니다.');
+        }
+      };
+
+      fetchBusStops(); // Fetch bus stops after position has been updated
     }
-  }, [position]);
+  }, [position]); // Position as dependency ensures this runs whenever position changes
 
   useEffect(() => {
     const fetchArrivalInfo = async (bsId) => {
@@ -83,7 +83,7 @@ export default function BusStopApp() {
     }
   }, [busStops]);
 
-  if (!busStops.length) return <div>버스 정류장을 불러오는 중...</div>;
+  if (!busStops.length && !error) return <div>버스 정류장을 불러오는 중...</div>;
 
   return (
     <div style={{ textAlign: 'center', padding: '16px' }}>
