@@ -4,15 +4,34 @@ export default function BusStopApp() {
   const [busStops, setBusStops] = useState([]);
   const [arrivalInfo, setArrivalInfo] = useState({});
   const [error, setError] = useState(null);
+  const [position, setPosition] = useState({ xPos: 128.640765, yPos: 35.8681438 });
 
-  const xPos = 128.640765;
-  const yPos = 35.8681438;
+  // Get user's current position
+  useEffect(() => {
+    const getUserLocation = () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            setPosition({ xPos: longitude, yPos: latitude }); // Update with user's location
+          },
+          (error) => {
+            setError('사용자의 위치를 가져올 수 없습니다.');
+          }
+        );
+      } else {
+        setError('Geolocation을 지원하지 않는 브라우저입니다.');
+      }
+    };
+
+    getUserLocation();
+  }, []);
 
   useEffect(() => {
     const fetchBusStops = async () => {
       try {
         const response = await fetch(
-          `https://businfo.daegu.go.kr:8095/dbms_web_api/bs/nearby?xPos=${xPos}&yPos=${yPos}&radius=500`
+          `https://businfo.daegu.go.kr:8095/dbms_web_api/bs/nearby?xPos=${position.xPos}&yPos=${position.yPos}&radius=400`
         );
         const data = await response.json();
 
@@ -30,8 +49,10 @@ export default function BusStopApp() {
       }
     };
 
-    fetchBusStops();
-  }, []);
+    if (position.xPos && position.yPos) {
+      fetchBusStops();
+    }
+  }, [position]);
 
   useEffect(() => {
     const fetchArrivalInfo = async (bsId) => {
