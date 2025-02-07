@@ -32,7 +32,7 @@ export default function BusStopApp() {
       const fetchBusStops = async () => {
         try {
           const response = await fetch(
-            `https://businfo.daegu.go.kr:8095/dbms_web_api/bs/nearby?xPos=${position.xPos}&yPos=${position.yPos}&radius=500`
+            `https://businfo.daegu.go.kr:8095/dbms_web_api/bs/nearby?xPos=${position.xPos}&yPos=${position.yPos}&radius=400`
           );
           const data = await response.json();
 
