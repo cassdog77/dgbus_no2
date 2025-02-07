@@ -86,7 +86,7 @@ export default function BusStopApp() {
 
   return (
     <div style={{ textAlign: 'center', padding: '16px' }}>
-      <h1>주변 버스 정류장</h1>
+      <h4>근처 버스정류장</h4>
       {error ? (
         <p style={{ color: 'red' }}>{error}</p>
       ) : (
