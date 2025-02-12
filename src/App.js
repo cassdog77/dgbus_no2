@@ -10,19 +10,13 @@ export default function BusStopApp() {
     const getUserLocation = () => {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const { latitude, longitude } = position.coords;
-            setPosition({ xPos: longitude, yPos: latitude });
-          },
-          (error) => {
-            setError('사용자의 위치를 가져올 수 없습니다.');
-          }
+          ({ coords }) => setPosition({ xPos: coords.longitude, yPos: coords.latitude }),
+          () => setError('사용자의 위치를 가져올 수 없습니다.')
         );
       } else {
         setError('Geolocation을 지원하지 않는 브라우저입니다.');
       }
     };
-
     getUserLocation();
   }, []);
 
@@ -34,21 +28,11 @@ export default function BusStopApp() {
             `https://businfo.daegu.go.kr:8095/dbms_web_api/bs/nearby?xPos=${position.xPos}&yPos=${position.yPos}&radius=400`
           );
           const data = await response.json();
-
-          const savedOrder = localStorage.getItem('busStopOrder');
-          if (savedOrder) {
-            const orderedStops = JSON.parse(savedOrder).map((bsId) =>
-              data.body.find((stop) => stop.bsId === bsId)
-            );
-            setBusStops(orderedStops.filter(Boolean));
-          } else {
-            setBusStops(data.body);
-          }
-        } catch (err) {
+          setBusStops(data.body);
+        } catch {
           setError('버스 정류장 정보를 가져오는 중 오류가 발생했습니다.');
         }
       };
-
       fetchBusStops();
     }
   }, [position]);
@@ -58,12 +42,8 @@ export default function BusStopApp() {
       try {
         const response = await fetch(`https://businfo.daegu.go.kr:8095/dbms_web_api/realtime/arr2/${bsId}`);
         const data = await response.json();
-        if (data.header.success && data.body.list) {
-          return data.body.list;
-        } else {
-          return [];
-        }
-      } catch (err) {
+        return data.header.success && data.body.list ? data.body.list : [];
+      } catch {
         return [];
       }
     };
@@ -71,96 +51,75 @@ export default function BusStopApp() {
     const fetchAllArrivalInfo = async () => {
       const newArrivalInfo = {};
       for (const stop of busStops) {
-        const info = await fetchArrivalInfo(stop.bsId);
-        newArrivalInfo[stop.bsId] = info;
+        newArrivalInfo[stop.bsId] = await fetchArrivalInfo(stop.bsId);
       }
       setArrivalInfo(newArrivalInfo);
     };
 
-    if (busStops.length > 0) {
-      fetchAllArrivalInfo();
-    }
+    if (busStops.length) fetchAllArrivalInfo();
   }, [busStops]);
 
   if (!busStops.length && !error) return <div>버스 정류장을 불러오는 중...</div>;
 
+  const renderBusStopTable = () => (
+    busStops.map((stop) => {
+      const buses = arrivalInfo[stop.bsId] || [];
+      if (!buses.length) {
+        return (
+          <tr key={stop.bsId}>
+            <td colSpan="4" style={{ padding: '8px', textAlign: 'center' }}>
+              {stop.bsNm} - 도착 정보 없음
+            </td>
+          </tr>
+        );
+      }
+      return buses.map((bus, index) => {
+        const { arrList = [] } = bus;
+        const firstBusArr = arrList[0] || {};
+
+        // 도착 상태가 '전' 또는 '전전'일 경우 빨간색으로 표시하는 조건
+        const isDelayed = (arrState) => {
+          return arrState === '전' || arrState === '전전';
+        };
+        return (
+          <tr key={`${stop.bsId}-${index}`}>
+            {index === 0 && (
+              <td rowSpan={buses.length} style={{ padding: '8px', textAlign: 'center' }}>
+                <a href={`https://businfo.daegu.go.kr:8095/dbms_web/map?mapMode=0&searchText=${stop.bsNm}`} target="_blank" rel="noopener noreferrer">
+                  {stop.bsNm}
+                </a>
+              </td>
+            )}
+            <td style={{ padding: '8px', textAlign: 'center' }}><strong>{bus.routeNo}</strong></td>
+            <td style={{ padding: '8px', textAlign: 'center', color: isDelayed(firstBusArr.arrState) ? 'red' : 'black' }}>
+              {firstBusArr.arrState || '정보 없음'}
+            </td>
+            <td style={{ padding: '8px', textAlign: 'center' }}>{firstBusArr.bsGap || '정보 없음'}</td>
+            <td style={{ padding: '8px', textAlign: 'center' }}>{firstBusArr.bsNm || '정보 없음'}</td>
+          </tr>
+        );
+      });
+    })
+  );
+
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', margin: '20px' }}>
-      <h1>출근</h1>
+      <h1 style={{ textAlign: 'center' }}>근처버스</h1>
       {error ? (
-        <p style={{ color: 'red' }}>{error}</p>
+        <p style={{ color: 'red', textAlign: 'center' }}>{error}</p>
       ) : (
-        <table
-          style={{
-            width: '100%',
-            borderCollapse: 'collapse',
-            marginTop: '20px',
-            border: '1px solid #ddd',
-          }}
-        >
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px', textAlign: 'center' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid #ddd' }}>
+            <tr>
               <th style={{ padding: '8px', backgroundColor: '#f2f2f2' }}>정류장</th>
               <th style={{ padding: '8px', backgroundColor: '#f2f2f2' }}>버스</th>
               <th style={{ padding: '8px', backgroundColor: '#f2f2f2' }}>도착</th>
+              <th style={{ padding: '8px', backgroundColor: '#f2f2f2' }}>X</th>
               <th style={{ padding: '8px', backgroundColor: '#f2f2f2' }}>현재</th>
-              <th style={{ padding: '8px', backgroundColor: '#f2f2f2' }}>.</th>
             </tr>
           </thead>
           <tbody>
-            {busStops.map((stop) => (
-              <React.Fragment key={stop.bsId}>
-                {arrivalInfo[stop.bsId]?.map((bus, index) => (
-                  <tr key={index} style={{ borderBottom: '1px solid #ddd' }}>
-                    <td style={{ padding: '8px' }}>
-                      <a
-                        href={`https://businfo.daegu.go.kr:8095/dbms_web/map?mapMode=0&searchText=${stop.bsNm}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {stop.bsNm}
-                      </a>
-                    </td>
-                    <td style={{ padding: '8px' }}>
-                      <strong>{bus.routeNo}</strong>
-                    </td>
-                    <td style={{ padding: '8px' }}>
-                      {bus.arrList.length > 0 ? (
-                        bus.arrList.map((arr, idx) => (
-                          <div key={idx}>
-                            {arr.arrState}
-                          </div>
-                        ))
-                      ) : (
-                        <div>도착 정보 없음</div>
-                      )}
-                    </td>
-                    <td style={{ padding: '8px' }}>
-                      {bus.arrList.length > 0 ? (
-                        bus.arrList.map((arr, idx) => (
-                          <div key={idx}>
-                            {arr.bsNm}
-                          </div>
-                        ))
-                      ) : (
-                        <div>정보 없음</div>
-                      )}
-                    </td>
-                    <td style={{ padding: '8px' }}>
-                      {bus.arrList.length > 0 ? (
-                        bus.arrList.map((arr, idx) => (
-                          <div key={idx}>
-                            {arr.bsGap}
-                          </div>
-                        ))
-                      ) : (
-                        <div>정보 없음</div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </React.Fragment>
-            ))}
+            {renderBusStopTable()}
           </tbody>
         </table>
       )}
