@@ -85,55 +85,81 @@ export default function BusStopApp() {
   if (!busStops.length && !error) return <div>버스 정류장을 불러오는 중...</div>;
 
   return (
-    <div style={{ textAlign: 'center', padding: '16px' }}>
-      <h4>근처 버스정류장</h4>
+    <div style={{ fontFamily: 'Arial, sans-serif', margin: '20px' }}>
+      <h1>출근</h1>
       {error ? (
         <p style={{ color: 'red' }}>{error}</p>
       ) : (
         <table
-          style={{ width: '100%', borderCollapse: 'collapse', marginTop: '16px' }}
+          style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            marginTop: '20px',
+            border: '1px solid #ddd',
+          }}
         >
           <thead>
             <tr style={{ borderBottom: '1px solid #ddd' }}>
-              <th style={{ padding: '8px' }}>정류장</th>
-              <th style={{ padding: '8px' }}>버스 도착 정보</th>
+              <th style={{ padding: '8px', backgroundColor: '#f2f2f2' }}>정류장</th>
+              <th style={{ padding: '8px', backgroundColor: '#f2f2f2' }}>버스</th>
+              <th style={{ padding: '8px', backgroundColor: '#f2f2f2' }}>도착</th>
+              <th style={{ padding: '8px', backgroundColor: '#f2f2f2' }}>현재</th>
+              <th style={{ padding: '8px', backgroundColor: '#f2f2f2' }}>.</th>
             </tr>
           </thead>
           <tbody>
             {busStops.map((stop) => (
-              <tr key={stop.bsId} style={{ borderBottom: '1px solid #ddd' }}>
-                <td style={{ padding: '8px' }}>
-                  <a
-                    href={`https://businfo.daegu.go.kr:8095/dbms_web/map?mapMode=0&searchText=${stop.bsNm}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {stop.bsNm}
-                  </a>
-                </td>
-                <td style={{ padding: '8px' }}>
-                  {arrivalInfo[stop.bsId] ? (
-                    <ul style={{ listStyleType: 'none', padding: 0 }}>
-                      {arrivalInfo[stop.bsId].map((bus, index) => (
-                        <li key={index}>
-                          <strong>{bus.routeNo}</strong>
-                          {bus.arrList.length > 0 ? (
-                            bus.arrList.map((arr, idx) => (
-                              <div key={idx}>
-                                {arr.arrState}({arr.bsGap}) {arr.bsNm}
-                              </div>
-                            ))
-                          ) : (
-                            <div> 도착 정보가 없습니다.</div>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p>도착 정보를 불러오는 중...</p>
-                  )}
-                </td>
-              </tr>
+              <React.Fragment key={stop.bsId}>
+                {arrivalInfo[stop.bsId]?.map((bus, index) => (
+                  <tr key={index} style={{ borderBottom: '1px solid #ddd' }}>
+                    <td style={{ padding: '8px' }}>
+                      <a
+                        href={`https://businfo.daegu.go.kr:8095/dbms_web/map?mapMode=0&searchText=${stop.bsNm}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {stop.bsNm}
+                      </a>
+                    </td>
+                    <td style={{ padding: '8px' }}>
+                      <strong>{bus.routeNo}</strong>
+                    </td>
+                    <td style={{ padding: '8px' }}>
+                      {bus.arrList.length > 0 ? (
+                        bus.arrList.map((arr, idx) => (
+                          <div key={idx}>
+                            {arr.arrState}
+                          </div>
+                        ))
+                      ) : (
+                        <div>도착 정보 없음</div>
+                      )}
+                    </td>
+                    <td style={{ padding: '8px' }}>
+                      {bus.arrList.length > 0 ? (
+                        bus.arrList.map((arr, idx) => (
+                          <div key={idx}>
+                            {arr.bsNm}
+                          </div>
+                        ))
+                      ) : (
+                        <div>정보 없음</div>
+                      )}
+                    </td>
+                    <td style={{ padding: '8px' }}>
+                      {bus.arrList.length > 0 ? (
+                        bus.arrList.map((arr, idx) => (
+                          <div key={idx}>
+                            {arr.bsGap}
+                          </div>
+                        ))
+                      ) : (
+                        <div>정보 없음</div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </React.Fragment>
             ))}
           </tbody>
         </table>
