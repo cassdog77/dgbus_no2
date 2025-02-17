@@ -1,0 +1,31 @@
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
+
+const Home = () => {
+  return (
+    <div>
+      <h2>홈 페이지</h2>
+      <Link to="/busStop">버스 정류장 페이지로 이동</Link>
+    </div>
+  );
+};
+
+const BusStop = () => {
+  return <div>버스 정류장 페이지</div>;
+};
+
+function App() {
+  return (
+    <Router>
+      <nav>
+        <Link to="/">홈</Link> | <Link to="/busStop">버스 정류장</Link>
+      </nav>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/busStop" element={<BusStop />} />
+      </Routes>
+    </Router>
+  );
+}
+
+export default App;
