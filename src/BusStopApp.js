@@ -92,12 +92,12 @@ export default function BusStopApp() {
           <tr key={`${stop.bsId}-${index}`}>
             {index === 0 && (
               <td rowSpan={buses.length} style={{ fontSize: '12px', padding: '6px', textAlign: 'center', border: '1px solid #ccc' }}>
-                <a href={`https://businfo.daegu.go.kr:8095/dbms_web/map?mapMode=0&searchText=${stop.bsNm}`} target="_blank" rel="noopener noreferrer">
+                <a href={`./${encodeURIComponent(stop.bsNm)}`} target="_blank" rel="noopener noreferrer">
                   {stop.bsNm}
                 </a>
                 {/* 즐겨찾기 아이콘 추가 */}
-                <a href={`./${encodeURIComponent(stop.bsNm)}`} target="_blank" rel="noopener noreferrer">
-                +
+                <a href={`https://businfo.daegu.go.kr:8095/dbms_web/map?mapMode=0&searchText=${stop.bsNm}`} target="_blank" rel="noopener noreferrer">
+                 - 
                 </a>
               </td>
             )}
