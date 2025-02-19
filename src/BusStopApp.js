@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
 
 export default function BusStopApp() {
   const [busStops, setBusStops] = useState([]);
-  const [arrivalInfo, setArrivalInfo] = useState({});
   const [error, setError] = useState(null);
   const [position, setPosition] = useState({ xPos: null, yPos: null });
-  const { stopName } = useParams(); // URL에서 정류장 이름을 가져옴
 
   useEffect(() => {
     const getUserLocation = () => {
@@ -27,7 +24,7 @@ export default function BusStopApp() {
       const fetchBusStops = async () => {
         try {
           const response = await fetch(
-            `https://businfo.daegu.go.kr:8095/dbms_web_api/bs/nearby?xPos=${position.xPos}&yPos=${position.yPos}&radius=400`
+            `https://businfo.daegu.go.kr:8095/dbms_web_api/bs/nearby?xPos=${position.xPos}&yPos=${position.yPos}&radius=1000`
           );
           const data = await response.json();
           setBusStops(data.body);
@@ -39,97 +36,32 @@ export default function BusStopApp() {
     }
   }, [position]);
 
-  useEffect(() => {
-    const fetchArrivalInfo = async (bsId) => {
-      try {
-        const response = await fetch(`https://businfo.daegu.go.kr:8095/dbms_web_api/realtime/arr2/${bsId}`);
-        const data = await response.json();
-        return data.header.success && data.body.list ? data.body.list : [];
-      } catch {
-        return [];
-      }
-    };
-
-    const fetchAllArrivalInfo = async () => {
-      const newArrivalInfo = {};
-      for (const stop of busStops) {
-        newArrivalInfo[stop.bsId] = await fetchArrivalInfo(stop.bsId);
-      }
-      setArrivalInfo(newArrivalInfo);
-    };
-
-    if (busStops.length) fetchAllArrivalInfo();
-  }, [busStops]);
-
   if (!busStops.length && !error) return <div>버스 정류장을 불러오는 중...</div>;
-
-  // stopName이 있으면 해당 정류장만 필터링, 없으면 모든 정류장 출력
-  const filteredBusStops = stopName
-    ? busStops.filter((stop) => stop.bsNm === stopName)
-    : busStops;
-
-  const renderBusStopTable = () =>
-    filteredBusStops.map((stop) => {
-      const buses = arrivalInfo[stop.bsId] || [];
-      if (!buses.length) {
-        return (
-          <tr key={stop.bsId}>
-            <td colSpan="4" style={{ fontSize: '12px', padding: '6px', textAlign: 'center', border: '1px solid #ccc' }}>
-              {stop.bsNm} - 도착 정보 없음
-            </td>
-          </tr>
-        );
-      }
-      return buses.map((bus, index) => {
-        const { arrList = [] } = bus;
-        const firstBusArr = arrList[0] || {};
-
-        // 도착 상태가 '전' 또는 '전전'일 경우 빨간색으로 표시하는 조건
-        const isDelayed = (arrState) => {
-          return arrState === '전' || arrState === '전전';
-        };
-        return (
-          <tr key={`${stop.bsId}-${index}`}>
-            {index === 0 && (
-              <td rowSpan={buses.length} style={{ fontSize: '12px', padding: '6px', textAlign: 'center', border: '1px solid #ccc' }}>
-                <a href={`./${encodeURIComponent(stop.bsNm)}`} target="_blank" rel="noopener noreferrer">
-                  {stop.bsNm}
-                </a>
-                {/* 즐겨찾기 아이콘 추가 */}
-                <a href={`https://businfo.daegu.go.kr:8095/dbms_web/map?mapMode=0&searchText=${stop.bsNm}`} target="_blank" rel="noopener noreferrer">
-                 - 
-                </a>
-              </td>
-            )}
-            <td style={{ fontSize: '12px', padding: '6px', textAlign: 'center', border: '1px solid #ccc' }}><strong>{bus.routeNo}</strong></td>
-            <td style={{ fontSize: '12px', padding: '6px', textAlign: 'center', color: isDelayed(firstBusArr.arrState) ? 'red' : 'black', border: '1px solid #ccc' }}>
-              {firstBusArr.arrState || '정보 없음'}
-            </td>
-            <td style={{ fontSize: '12px', padding: '6px', textAlign: 'center', border: '1px solid #ccc' }}>{firstBusArr.bsGap || '정보 없음'}</td>
-            <td style={{ fontSize: '12px', padding: '6px', textAlign: 'center', border: '1px solid #ccc' }}>{firstBusArr.bsNm || '정보 없음'}</td>
-          </tr>
-        );
-      });
-    });
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', fontSize: '14px', margin: '20px' }}>
-      <h1 style={{ textAlign: 'center' }}>근처버스</h1>
+      <h1 style={{ textAlign: 'center' }}>근처버스 정류장</h1>
       {error ? (
         <p style={{ color: 'red', textAlign: 'center' }}>{error}</p>
       ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px', textAlign: 'center', border: '1px solid #ccc' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'center', border: '1px solid #ccc' }}>
           <thead>
             <tr>
-              <th style={{ fontSize: '12px', padding: '6px', backgroundColor: '#f2f2f2', border: '1px solid #ccc' }}>정류장</th>
-              <th style={{ fontSize: '12px', padding: '6px', backgroundColor: '#f2f2f2', border: '1px solid #ccc' }}>버스</th>
-              <th style={{ fontSize: '12px', padding: '6px', backgroundColor: '#f2f2f2', border: '1px solid #ccc' }}>도착</th>
-              <th style={{ fontSize: '12px', padding: '6px', backgroundColor: '#f2f2f2', border: '1px solid #ccc' }}>X</th>
-              <th style={{ fontSize: '12px', padding: '6px', backgroundColor: '#f2f2f2', border: '1px solid #ccc' }}>현재</th>
+              <th style={{ padding: '6px', backgroundColor: '#f2f2f2', border: '1px solid #ccc' }}>거리 (m)</th>
+              <th style={{ padding: '6px', backgroundColor: '#f2f2f2', border: '1px solid #ccc' }}>버스 정류장</th>
             </tr>
           </thead>
           <tbody>
-            {renderBusStopTable()}
+            {busStops.map((stop) => (
+              <tr key={stop.bsId}>
+                <td style={{ padding: '6px', border: '1px solid #ccc' }}>{stop.dist}m</td>
+                <td style={{ padding: '6px', border: '1px solid #ccc' }}>
+                  <a href={`/${encodeURIComponent(stop.bsNm)}`} style={{ textDecoration: 'none', color: '#0066cc' }}>
+                    {stop.bsNm}
+                  </a>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       )}

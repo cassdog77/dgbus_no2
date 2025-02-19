@@ -1,13 +1,14 @@
-// App.js
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'; // Routes 추가
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import BusStopApp from './BusStopApp';
+import BusStopDetails from './BusStopDetails';
 
 function App() {
   return (
     <Router>
-      <Routes> {/* Routes로 Route를 감싸줌 */}
-        <Route path="/:stopName?" element={<BusStopApp />} /> {/* component 대신 element 사용 */}
+      <Routes>
+        <Route path="/" element={<BusStopApp />} /> {/* 기본 페이지 */}
+        <Route path="/:stopName" element={<BusStopDetails />} /> {/* 특정 정류장 페이지 */}
       </Routes>
     </Router>
   );
