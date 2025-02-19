@@ -16,9 +16,14 @@ export default function BusStopDetails() {
         const data = await response.json();
 
         if (data.header.success) {
+          // 연관 배열 형태로 변환, value와 wincId를 함께 저장
           const stopsMap = data.body.reduce((acc, item) => {
             if (item.type === 'bs') {
-              acc[item.text] = item.value; // 'text' 값을 key로, 'value' 값을 value로 설정
+              // item.text 값을 key로, item.value와 item.wincId를 객체로 저장
+              acc[item.text] = {
+                value: item.value,
+                wincId: item.wincId
+              };
             }
             return acc;
           }, {});
@@ -36,8 +41,10 @@ export default function BusStopDetails() {
     fetchBusStops(); // 컴포넌트가 마운트될 때 API 호출
   }, []); // 빈 배열을 넣어 한 번만 호출
 
-  // stopName과 일치하는 bsId를 가져옴
-  const bsId = busStops[stopName];
+  // stopName과 일치하는 bsId와 wincId를 가져옴
+  const stopDetails = busStops[stopName];
+  const bsId = stopDetails ? stopDetails.value : null;
+  const wincId = stopDetails ? stopDetails.wincId : null;
 
   // bsId로 도착 정보 가져오기
   useEffect(() => {
@@ -67,7 +74,11 @@ export default function BusStopDetails() {
       <Helmet>
         <title>{stopName}</title> {/* 웹 페이지 제목을 stopName으로 설정 */}
       </Helmet>
-      <h1 style={{ textAlign: 'center' }}>{stopName}</h1> {/* stopName을 제목에 표시 */}
+      <h1 style={{ textAlign: 'center' }}>
+        <a href={`https://businfo.daegu.go.kr:8095/dbms_web/map?mapMode=0&searchText=${stopName}&wincId=${wincId}`} target="_blank" rel="noopener noreferrer">
+            {stopName}
+        </a>
+      </h1> {/* stopName을 제목에 표시 */}
       {error ? (
         <p style={{ color: 'red', textAlign: 'center' }}>{error}</p>
       ) : (
