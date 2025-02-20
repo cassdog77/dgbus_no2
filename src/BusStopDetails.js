@@ -56,7 +56,15 @@ export default function BusStopDetails() {
         const data = await response.json();
 
         if (data.body.list) {
-          setArrivalInfo(data.body.list); // 도착 정보 저장
+          // 각 버스 번호(routeNo)에 해당하는 도착 정보 배열(arrList)을 펼쳐서 저장
+          const arrivals = data.body.list.flatMap((bus) =>
+            bus.arrList.map((arr) => ({
+              routeNo: bus.routeNo,
+              arrivalTime: arr.arrState,
+              remainingStops: arr.bsGap,
+            }))
+          );
+          setArrivalInfo(arrivals); // 도착 정보 저장
         } else {
           setError('도착 정보가 없습니다.');
         }
